@@ -1,9 +1,8 @@
-[workspace]
-members = ["service"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "arby"
 version = "0.1.0"
 edition = "2021"
 
-[workspace.dependencies]
+[dependencies]
+tokio = { version = "1.39.2", features = ["full"] }
+tokio-util = "0.7.11"
