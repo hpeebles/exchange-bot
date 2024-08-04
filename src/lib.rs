@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 pub mod exchanges;
 
+use async_trait::async_trait;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 
+#[async_trait]
 pub trait ExchangeSubscriber<C> {
-    fn new(config: C, sender: Sender<OrderbookUpdate>, cancellation_token: CancellationToken) -> Self;
-    fn start(self);
+    fn new(config: C, sender: Sender<OrderbookUpdate>) -> Self;
+    async fn run_async(self, cancellation_token: CancellationToken);
 }
 
 pub struct OrderbookUpdate {

@@ -1,27 +1,30 @@
-use std::sync::mpsc::channel;
-use std::thread;
-use tokio_util::sync::CancellationToken;
 use arby::exchanges::lbank::{LBankConfig, LBankSubscriber};
 use arby::ExchangeSubscriber;
+use std::sync::mpsc::channel;
+use tokio::select;
+use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() {
     abort_on_panic();
+
     let (tx, _rx) = channel();
     let shutdown = CancellationToken::new();
 
-    let mut join_handles = Vec::new();
-    join_handles.push(thread::spawn(move || {
-        let config = LBankConfig {
-            api_key: "123".to_string(),
-            secret_key: "xyz".to_string(),
-        };
+    select! {
+        _ = {
+            let config = LBankConfig {
+                api_key: "123".to_string(),
+                secret_key: "xyz".to_string(),
+            };
 
-        let lbank_service = LBankSubscriber::new(config, tx.clone(), shutdown.clone());
-        lbank_service.start()
-    }));
+            let lbank_service = LBankSubscriber::new(config, tx.clone());
+            lbank_service.run_async(shutdown.clone())
+        } => (),
+        _ = tokio::signal::ctrl_c() => (),
+    }
 
-    thread::park();
+    shutdown.cancel();
 }
 
 pub fn abort_on_panic() {

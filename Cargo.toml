@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.81"
+ezsockets = "0.6.3"
+futures = "0.3.30"
 tokio = { version = "1.39.2", features = ["full"] }
 tokio-util = "0.7.11"
