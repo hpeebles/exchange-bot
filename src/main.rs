@@ -1,3 +1,4 @@
+use exchange_bot::exchanges::bitrue::BitrueSubscriber;
 use exchange_bot::exchanges::lbank::LBankSubscriber;
 use exchange_bot::ExchangeSubscriber;
 use std::sync::mpsc::channel;
@@ -17,6 +18,10 @@ async fn main() {
         _ = {
             let lbank_service = LBankSubscriber::new(tx.clone());
             lbank_service.run_async(shutdown.clone())
+        } => (),
+        _ = {
+            let bitrue_service = BitrueSubscriber::new(tx.clone());
+            bitrue_service.run_async(shutdown.clone())
         } => (),
         _ = tokio::signal::ctrl_c() => {
             println!("Ctrl-c received");
