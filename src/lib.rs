@@ -1,12 +1,13 @@
 pub mod exchanges;
 
 use async_trait::async_trait;
+use serde::Serialize;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 
 #[async_trait]
-pub trait ExchangeSubscriber<C> {
-    fn new(config: C, sender: Sender<OrderbookUpdate>) -> Self;
+pub trait ExchangeSubscriber {
+    fn new(sender: Sender<OrderbookUpdate>) -> Self;
     async fn run_async(self, cancellation_token: CancellationToken);
 }
 
@@ -27,4 +28,8 @@ pub struct Order {
 #[allow(dead_code)]
 struct OrderProcessor {
     receiver: Receiver<OrderbookUpdate>,
+}
+
+fn serialize_to_json<S: Serialize>(value: &S) -> String {
+    serde_json::to_string(value).unwrap()
 }

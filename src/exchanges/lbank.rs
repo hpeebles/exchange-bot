@@ -1,4 +1,4 @@
-use crate::{ExchangeSubscriber, Order, OrderbookUpdate};
+use crate::{serialize_to_json, ExchangeSubscriber, Order, OrderbookUpdate};
 use async_trait::async_trait;
 use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
@@ -10,16 +10,8 @@ use tokio_util::sync::CancellationToken;
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
 
-#[allow(dead_code)]
 pub struct LBankSubscriber {
-    config: LBankConfig,
     sender: Sender<OrderbookUpdate>,
-}
-
-#[allow(dead_code)]
-pub struct LBankConfig {
-    pub api_key: String,
-    pub secret_key: String,
 }
 
 struct WebSocketClient {
@@ -102,9 +94,9 @@ impl ClientExt for WebSocketClient {
 }
 
 #[async_trait]
-impl ExchangeSubscriber<LBankConfig> for LBankSubscriber {
-    fn new(config: LBankConfig, sender: Sender<OrderbookUpdate>) -> Self {
-        LBankSubscriber { config, sender }
+impl ExchangeSubscriber for LBankSubscriber {
+    fn new(sender: Sender<OrderbookUpdate>) -> Self {
+        LBankSubscriber { sender }
     }
 
     async fn run_async(self, cancellation_token: CancellationToken) {
@@ -126,10 +118,6 @@ impl ExchangeSubscriber<LBankConfig> for LBankSubscriber {
 
         println!("LBank disconnected");
     }
-}
-
-fn serialize_to_json<S: Serialize>(value: &S) -> String {
-    serde_json::to_string(value).unwrap()
 }
 
 #[derive(Serialize, Deserialize)]

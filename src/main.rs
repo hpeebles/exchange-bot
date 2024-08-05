@@ -1,4 +1,4 @@
-use arby::exchanges::lbank::{LBankConfig, LBankSubscriber};
+use arby::exchanges::lbank::LBankSubscriber;
 use arby::ExchangeSubscriber;
 use std::sync::mpsc::channel;
 use tokio::select;
@@ -15,12 +15,7 @@ async fn main() {
 
     select! {
         _ = {
-            let config = LBankConfig {
-                api_key: "123".to_string(),
-                secret_key: "xyz".to_string(),
-            };
-
-            let lbank_service = LBankSubscriber::new(config, tx.clone());
+            let lbank_service = LBankSubscriber::new(tx.clone());
             lbank_service.run_async(shutdown.clone())
         } => (),
         _ = tokio::signal::ctrl_c() => {
