@@ -1,5 +1,5 @@
 [package]
-name = "arby"
+name = "exchange-bot"
 version = "0.1.0"
 edition = "2021"
 

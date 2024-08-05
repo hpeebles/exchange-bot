@@ -1,5 +1,5 @@
-use arby::exchanges::lbank::LBankSubscriber;
-use arby::ExchangeSubscriber;
+use exchange_bot::exchanges::lbank::LBankSubscriber;
+use exchange_bot::ExchangeSubscriber;
 use std::sync::mpsc::channel;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
