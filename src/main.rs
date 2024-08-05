@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() {
+    println!("Service started");
+
     abort_on_panic();
 
     let (tx, _rx) = channel();
@@ -21,10 +23,14 @@ async fn main() {
             let lbank_service = LBankSubscriber::new(config, tx.clone());
             lbank_service.run_async(shutdown.clone())
         } => (),
-        _ = tokio::signal::ctrl_c() => (),
+        _ = tokio::signal::ctrl_c() => {
+            println!("Ctrl-c received");
+        },
     }
 
+    println!("Service stopping");
     shutdown.cancel();
+    println!("Service stopped");
 }
 
 pub fn abort_on_panic() {
