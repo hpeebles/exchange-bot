@@ -6,5 +6,7 @@ edition.workspace = true
 [dependencies]
 tokio.workspace = true
 tokio-util.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 xb-subscriber.path = "../subscriber"
 xb-types.path = "../types"
