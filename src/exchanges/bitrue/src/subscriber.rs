@@ -6,8 +6,9 @@ use flate2::bufread::GzDecoder;
 use serde::{Deserialize, Serialize};
 use std::io::Read;
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
+use std::sync::Arc;
 use tokio::select;
+use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
@@ -19,7 +20,7 @@ pub struct BitrueSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
-    sender: Sender<OrderbookState>,
+    sender: Sender<Arc<OrderbookState>>,
 }
 
 impl WebSocketClient {
@@ -80,7 +81,7 @@ impl ClientExt for WebSocketClient {
                     })
                     .collect(),
             };
-            self.sender.send(update).unwrap();
+            self.sender.send(Arc::new(update)).unwrap();
         } else if let Ok(Ping { ping }) = serde_json::from_str(&s) {
             self.send(&Pong { pong: ping }).unwrap();
         }
@@ -112,7 +113,7 @@ impl ClientExt for WebSocketClient {
 impl ExchangeSubscriber for BitrueSubscriber {
     async fn run_async(
         self,
-        sender: Sender<OrderbookState>,
+        sender: Sender<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
         let (handle, future) = ezsockets::connect(

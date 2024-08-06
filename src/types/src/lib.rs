@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug)]
@@ -12,7 +13,11 @@ pub enum Exchange {
 
 #[async_trait]
 pub trait ExchangeSubscriber {
-    async fn run_async(self, sender: Sender<OrderbookState>, cancellation_token: CancellationToken);
+    async fn run_async(
+        self,
+        sender: Sender<Arc<OrderbookState>>,
+        cancellation_token: CancellationToken,
+    );
 }
 
 #[derive(Debug)]
