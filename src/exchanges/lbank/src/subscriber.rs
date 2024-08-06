@@ -4,8 +4,9 @@ use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use std::sync::Arc;
 use tokio::select;
-use tokio::sync::mpsc::Sender;
+use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
@@ -17,7 +18,7 @@ pub struct LBankSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
-    sender: Sender<OrderbookState>,
+    sender: Sender<Arc<OrderbookState>>,
 }
 
 impl WebSocketClient {
@@ -73,7 +74,7 @@ impl ClientExt for WebSocketClient {
                             .collect(),
                     };
                     trace!("LBank: Received update: {update:?}");
-                    self.sender.try_send(update).unwrap();
+                    self.sender.send(Arc::new(update)).unwrap();
                 }
             }
         } else if let Ok(Action::Ping(Ping { ping })) = serde_json::from_str(&text) {
@@ -111,7 +112,7 @@ impl ClientExt for WebSocketClient {
 impl ExchangeSubscriber for LBankSubscriber {
     async fn run_async(
         self,
-        sender: Sender<OrderbookState>,
+        sender: Sender<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
         let (handle, future) = ezsockets::connect(
