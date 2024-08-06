@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use std::collections::BTreeMap;
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
+use tokio::sync::mpsc::Sender;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug)]

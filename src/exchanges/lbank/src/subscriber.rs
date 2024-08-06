@@ -4,8 +4,8 @@ use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use std::sync::mpsc::Sender;
 use tokio::select;
+use tokio::sync::mpsc::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
 use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
@@ -73,7 +73,7 @@ impl ClientExt for WebSocketClient {
                             .collect(),
                     };
                     trace!("LBank: Received update: {update:?}");
-                    self.sender.send(update).unwrap();
+                    self.sender.try_send(update).unwrap();
                 }
             }
         } else if let Ok(Action::Ping(Ping { ping })) = serde_json::from_str(&text) {

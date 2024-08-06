@@ -1,4 +1,4 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 use xb_exchanges_bitrue::BitrueSubscriber;
 use xb_exchanges_lbank::LBankSubscriber;
@@ -14,7 +14,7 @@ impl Subscriber {
     }
 
     pub fn run(self, cancellation_token: CancellationToken) -> Receiver<OrderbookState> {
-        let (sender, receiver) = channel();
+        let (sender, receiver) = channel(1024);
 
         tokio::spawn(self.run_async(sender, cancellation_token));
 

@@ -1353,6 +1353,7 @@ dependencies = [
  "async-trait",
  "serde",
  "test-case",
+ "tokio",
  "tokio-util",
 ]
 
