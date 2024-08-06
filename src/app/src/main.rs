@@ -6,7 +6,7 @@ use tracing::info;
 use xb_arb_finder::ArbFinder;
 use xb_cashout::Cashout;
 use xb_subscriber::Subscriber;
-use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor};
+use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor, Price4Decimals};
 
 #[tokio::main]
 async fn main() {
@@ -26,6 +26,7 @@ async fn main() {
     let cashout = Cashout::new(
         Duration::from_secs(300),
         Amount8Decimals::from_whole(1000),
+        Some(Price4Decimals::from_units(5000)),
         cashout_tx,
     );
 
