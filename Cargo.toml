@@ -4,6 +4,7 @@ members = [
     "src/exchanges/bitrue",
     "src/exchanges/lbank",
     "src/processors/arb_finder",
+    "src/processors/cashout",
     "src/subscriber",
     "src/types"
 ]

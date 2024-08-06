@@ -1,0 +1,10 @@
+[package]
+name = "xb-cashout"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+xb-types.path = "../../types"

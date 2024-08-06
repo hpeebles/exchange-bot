@@ -1299,12 +1299,23 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "xb-arb-finder",
+ "xb-cashout",
  "xb-subscriber",
  "xb-types",
 ]
 
 [[package]]
 name = "xb-arb-finder"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "xb-types",
+]
+
+[[package]]
+name = "xb-cashout"
 version = "0.1.0"
 dependencies = [
  "tokio",
