@@ -7,14 +7,14 @@ use tracing::info;
 use xb_types::{ArbOpportunity, Exchange, OrderbookState, OrderbookStateProcessor};
 
 pub struct ArbFinder {
-    sender: Sender<Arc<ArbOpportunity>>,
+    arb_sender: Sender<Arc<ArbOpportunity>>,
     state_per_exchange: HashMap<Exchange, OrderbookState>,
 }
 
 impl ArbFinder {
-    pub fn new(sender: Sender<Arc<ArbOpportunity>>) -> ArbFinder {
+    pub fn new(arb_sender: Sender<Arc<ArbOpportunity>>) -> ArbFinder {
         ArbFinder {
-            sender,
+            arb_sender,
             state_per_exchange: HashMap::new(),
         }
     }
@@ -73,7 +73,7 @@ impl ArbFinder {
 
     fn notify_arb(&self, arb: ArbOpportunity) {
         info!("Found arb: {arb:?}");
-        self.sender.send(Arc::new(arb)).unwrap();
+        self.arb_sender.send(Arc::new(arb)).unwrap();
     }
 }
 

@@ -63,6 +63,13 @@ pub struct Order {
     pub amount: Amount8Decimals,
 }
 
+#[derive(Clone, Debug)]
+pub struct PendingMarketOrder {
+    pub exchange: Exchange,
+    pub amount: Amount8Decimals,
+    pub expected_return: Amount8Decimals,
+}
+
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Price4Decimals {
     units: u128,
@@ -71,6 +78,32 @@ pub struct Price4Decimals {
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Amount8Decimals {
     units: u128,
+}
+
+impl Price4Decimals {
+    pub fn from_units(units: u128) -> Price4Decimals {
+        Price4Decimals { units }
+    }
+
+    pub fn units(&self) -> u128 {
+        self.units
+    }
+}
+
+impl Amount8Decimals {
+    pub fn from_units(units: u128) -> Amount8Decimals {
+        Amount8Decimals { units }
+    }
+
+    pub fn from_whole(value: u128) -> Amount8Decimals {
+        Amount8Decimals {
+            units: value * 1_0000_0000,
+        }
+    }
+
+    pub fn units(&self) -> u128 {
+        self.units
+    }
 }
 
 impl FromStr for Price4Decimals {
