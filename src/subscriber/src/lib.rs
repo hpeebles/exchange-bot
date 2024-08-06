@@ -1,33 +1,47 @@
-use async_trait::async_trait;
-use serde::Serialize;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use tokio_util::sync::CancellationToken;
+use xb_exchanges_bitrue::BitrueSubscriber;
+use xb_exchanges_lbank::LBankSubscriber;
+use xb_types::{Exchange, ExchangeSubscriber, OrderbookUpdate};
 
-#[async_trait]
-pub trait ExchangeSubscriber {
-    fn new(sender: Sender<OrderbookUpdate>) -> Self;
-    async fn run_async(self, cancellation_token: CancellationToken);
+pub struct Subscriber {
+    exchanges: Vec<Exchange>,
 }
 
-#[derive(Debug)]
-pub struct OrderbookUpdate {
-    pub timestamp_ms: u64,
-    pub best_ask: Order,
-    pub best_bid: Order,
-}
+impl Subscriber {
+    pub fn new(exchanges: Vec<Exchange>) -> Subscriber {
+        Subscriber { exchanges }
+    }
 
-#[allow(dead_code)]
-#[derive(Debug)]
-pub struct Order {
-    pub price: f64,
-    pub amount: u128,
-}
+    pub fn run(self, cancellation_token: CancellationToken) -> Receiver<OrderbookUpdate> {
+        let (sender, receiver) = channel();
 
-#[allow(dead_code)]
-struct OrderProcessor {
-    receiver: Receiver<OrderbookUpdate>,
-}
+        tokio::spawn(self.run_async(sender, cancellation_token));
 
-pub fn serialize_to_json<S: Serialize>(value: &S) -> String {
-    serde_json::to_string(value).unwrap()
+        receiver
+    }
+
+    async fn run_async(
+        self,
+        sender: Sender<OrderbookUpdate>,
+        cancellation_token: CancellationToken,
+    ) {
+        let mut futures = Vec::new();
+        for exchange in self.exchanges {
+            match exchange {
+                Exchange::Bitrue => {
+                    let bitrue_service = BitrueSubscriber::default();
+                    futures
+                        .push(bitrue_service.run_async(sender.clone(), cancellation_token.clone()));
+                }
+                Exchange::LBank => {
+                    let lbank_service = LBankSubscriber::default();
+                    futures
+                        .push(lbank_service.run_async(sender.clone(), cancellation_token.clone()));
+                }
+            }
+        }
+
+        futures::future::select_all(futures).await;
+    }
 }

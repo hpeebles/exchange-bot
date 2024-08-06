@@ -1,3 +1,4 @@
+use crate::serialize_to_json;
 use async_trait::async_trait;
 use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
@@ -6,13 +7,12 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
-use xb_subscriber::{serialize_to_json, ExchangeSubscriber, Order, OrderbookUpdate};
+use xb_types::{ExchangeSubscriber, Order, OrderbookUpdate};
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
 
-pub struct LBankSubscriber {
-    sender: Sender<OrderbookUpdate>,
-}
+#[derive(Default)]
+pub struct LBankSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
@@ -95,16 +95,13 @@ impl ClientExt for WebSocketClient {
 
 #[async_trait]
 impl ExchangeSubscriber for LBankSubscriber {
-    fn new(sender: Sender<OrderbookUpdate>) -> Self {
-        LBankSubscriber { sender }
-    }
-
-    async fn run_async(self, cancellation_token: CancellationToken) {
+    async fn run_async(
+        self,
+        sender: Sender<OrderbookUpdate>,
+        cancellation_token: CancellationToken,
+    ) {
         let (handle, future) = ezsockets::connect(
-            |handle| WebSocketClient {
-                handle,
-                sender: self.sender.clone(),
-            },
+            |handle| WebSocketClient { handle, sender },
             ClientConfig::new(URL),
         )
         .await;

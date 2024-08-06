@@ -5,6 +5,11 @@ edition.workspace = true
 
 [dependencies]
 async-trait.workspace = true
+futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+tokio.workspace = true
 tokio-util.workspace = true
+xb-exchanges-bitrue.path = "../exchanges/bitrue"
+xb-exchanges-lbank.path = "../exchanges/lbank"
+xb-types.path = "../types"

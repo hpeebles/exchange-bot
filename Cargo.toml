@@ -3,7 +3,8 @@ members = [
     "src/app",
     "src/exchanges/bitrue",
     "src/exchanges/lbank",
-    "src/subscriber"
+    "src/subscriber",
+    "src/types"
 ]
 resolver = "2"
 
