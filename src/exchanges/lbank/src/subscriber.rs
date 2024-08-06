@@ -7,6 +7,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
+use tracing::{error, info, trace};
 use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
@@ -22,7 +23,7 @@ struct WebSocketClient {
 impl WebSocketClient {
     fn send(&mut self, value: &Action) -> Result<MessageSignal, Error> {
         let json = serialize_to_json(&value);
-        println!("LBank: Sending message: {json}");
+        trace!("LBank: Sending message: {json}");
         self.handle.text(json).map_err(|e| e.into())
     }
 
@@ -41,7 +42,8 @@ impl ClientExt for WebSocketClient {
     type Call = ();
 
     async fn on_text(&mut self, text: String) -> Result<(), Error> {
-        println!("LBank: Received text: {text}");
+        trace!("LBank: Received text: {text}");
+
         if let Ok(message) = serde_json::from_str(&text) {
             match message {
                 DataMessage::MarketDepth(d) => {
@@ -70,7 +72,7 @@ impl ClientExt for WebSocketClient {
                             })
                             .collect(),
                     };
-                    println!("LBank: Received update: {update:?}");
+                    trace!("LBank: Received update: {update:?}");
                     self.sender.send(update).unwrap();
                 }
             }
@@ -89,19 +91,19 @@ impl ClientExt for WebSocketClient {
     }
 
     async fn on_connect(&mut self) -> Result<(), Error> {
-        println!("LBank: Connected");
+        info!("LBank: Connected");
         self.subscribe().unwrap();
         Ok(())
     }
 
     async fn on_disconnect(&mut self) -> Result<ClientCloseMode, Error> {
-        println!("LBank: Disconnected");
+        info!("LBank: Disconnected");
         Ok(ClientCloseMode::Reconnect)
     }
 
     async fn on_connect_fail(&mut self, error: WSError) -> Result<ClientCloseMode, Error> {
-        println!("LBank: Failed to connect: {error:?}");
-        Err(error.into())
+        error!("LBank: Failed to connect: {error:?}");
+        Ok(ClientCloseMode::Reconnect)
     }
 }
 
@@ -125,7 +127,7 @@ impl ExchangeSubscriber for LBankSubscriber {
             }
         }
 
-        println!("LBank disconnected");
+        info!("LBank disconnected");
     }
 }
 

@@ -9,6 +9,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
+use tracing::{error, info, trace};
 use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://ws.bitrue.com/market/ws";
@@ -24,7 +25,7 @@ struct WebSocketClient {
 impl WebSocketClient {
     fn send<S: Serialize>(&mut self, value: &S) -> Result<MessageSignal, Error> {
         let json = serialize_to_json(&value);
-        println!("Bitrue: Sending message: {json}");
+        trace!("Bitrue: Sending message: {json}");
         self.handle.text(json).map_err(|e| e.into())
     }
 
@@ -51,7 +52,7 @@ impl ClientExt for WebSocketClient {
         let mut d = GzDecoder::new(bytes.as_slice());
         let mut s = String::new();
         d.read_to_string(&mut s).unwrap();
-        println!("Bitrue: Received text: {s}");
+        trace!("Bitrue: Received text: {s}");
 
         if let Ok(m) = serde_json::from_str::<MarketDepth>(&s) {
             let update = OrderbookState {
@@ -91,19 +92,19 @@ impl ClientExt for WebSocketClient {
     }
 
     async fn on_connect(&mut self) -> Result<(), Error> {
-        println!("Bitrue: Connected");
+        info!("Bitrue: Connected");
         self.subscribe().unwrap();
         Ok(())
     }
 
     async fn on_disconnect(&mut self) -> Result<ClientCloseMode, Error> {
-        println!("Bitrue: Disconnected");
+        info!("Bitrue: Disconnected");
         Ok(ClientCloseMode::Reconnect)
     }
 
     async fn on_connect_fail(&mut self, error: WSError) -> Result<ClientCloseMode, Error> {
-        println!("Bitrue: Failed to connect: {error:?}");
-        Err(error.into())
+        error!("Bitrue: Failed to connect: {error:?}");
+        Ok(ClientCloseMode::Reconnect)
     }
 }
 
@@ -127,7 +128,7 @@ impl ExchangeSubscriber for BitrueSubscriber {
             }
         }
 
-        println!("Bitrue disconnected");
+        info!("Bitrue disconnected");
     }
 }
 

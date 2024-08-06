@@ -1,10 +1,14 @@
+use std::io;
 use tokio_util::sync::CancellationToken;
+use tracing::info;
 use xb_subscriber::Subscriber;
 use xb_types::Exchange;
 
 #[tokio::main]
 async fn main() {
-    println!("Service started");
+    tracing_subscriber::fmt().with_writer(io::stdout).init();
+
+    info!("Service started");
 
     abort_on_panic();
 
@@ -15,9 +19,9 @@ async fn main() {
 
     tokio::signal::ctrl_c().await.unwrap();
 
-    println!("Service stopping");
+    info!("Service stopping");
     shutdown.cancel();
-    println!("Service stopped");
+    info!("Service stopped");
 }
 
 pub fn abort_on_panic() {
