@@ -70,7 +70,7 @@ mod tests {
     #[test_case("123.4567", 1234567)]
     #[test_case("1234", 12340000)]
     fn parse_price(s: &str, expected_units: u128) {
-        let result = Price4Decimals::from_str(&s).unwrap();
+        let result = Price4Decimals::from_str(s).unwrap();
         assert_eq!(result.units, expected_units);
     }
 }
