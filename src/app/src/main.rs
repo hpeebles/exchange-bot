@@ -1,9 +1,9 @@
-use exchange_bot::exchanges::bitrue::BitrueSubscriber;
-use exchange_bot::exchanges::lbank::LBankSubscriber;
-use exchange_bot::ExchangeSubscriber;
 use std::sync::mpsc::channel;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
+use xb_bitrue::subscriber::BitrueSubscriber;
+use xb_lbank::subscriber::LBankSubscriber;
+use xb_subscriber::ExchangeSubscriber;
 
 #[tokio::main]
 async fn main() {

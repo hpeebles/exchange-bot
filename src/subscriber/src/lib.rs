@@ -1,5 +1,3 @@
-pub mod exchanges;
-
 use async_trait::async_trait;
 use serde::Serialize;
 use std::sync::mpsc::{Receiver, Sender};
@@ -21,8 +19,8 @@ pub struct OrderbookUpdate {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Order {
-    price: f64,
-    amount: u128,
+    pub price: f64,
+    pub amount: u128,
 }
 
 #[allow(dead_code)]
@@ -30,6 +28,6 @@ struct OrderProcessor {
     receiver: Receiver<OrderbookUpdate>,
 }
 
-fn serialize_to_json<S: Serialize>(value: &S) -> String {
+pub fn serialize_to_json<S: Serialize>(value: &S) -> String {
     serde_json::to_string(value).unwrap()
 }

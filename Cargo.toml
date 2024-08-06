@@ -1,9 +1,17 @@
-[package]
-name = "exchange-bot"
+[workspace]
+members = [
+    "src/app",
+    "src/exchanges/bitrue",
+    "src/exchanges/lbank",
+    "src/subscriber"
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+[workspace.dependencies]
 async-trait = "0.1.81"
 ezsockets = { version = "0.6.3", features = ["rustls"] }
 flate2 = "1.0.31"

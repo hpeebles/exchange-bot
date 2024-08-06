@@ -202,20 +202,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
-name = "exchange-bot"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "ezsockets",
- "flate2",
- "futures",
- "serde",
- "serde_json",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
 name = "ezsockets"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1175,6 +1161,54 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "xb-app"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "tokio-util",
+ "xb-bitrue",
+ "xb-lbank",
+ "xb-subscriber",
+]
+
+[[package]]
+name = "xb-bitrue"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "ezsockets",
+ "flate2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "xb-subscriber",
+]
+
+[[package]]
+name = "xb-lbank"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "ezsockets",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "xb-subscriber",
+]
+
+[[package]]
+name = "xb-subscriber"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "tokio-util",
+]
 
 [[package]]
 name = "zerocopy"
