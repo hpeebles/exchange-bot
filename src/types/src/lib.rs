@@ -73,4 +73,13 @@ mod tests {
         let result = Price4Decimals::from_str(s).unwrap();
         assert_eq!(result.units, expected_units);
     }
+
+    #[test_case("0.1234", 12340000)]
+    #[test_case("1.234", 123400000)]
+    #[test_case("123.45678901", 12345678901)]
+    #[test_case("1234", 123400000000)]
+    fn parse_amount(s: &str, expected_units: u128) {
+        let result = Amount8Decimals::from_str(s).unwrap();
+        assert_eq!(result.units, expected_units);
+    }
 }
