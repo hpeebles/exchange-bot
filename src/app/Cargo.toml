@@ -8,5 +8,6 @@ tokio.workspace = true
 tokio-util.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+xb-arb-finder.path = "../processors/arb_finder"
 xb-subscriber.path = "../subscriber"
 xb-types.path = "../types"

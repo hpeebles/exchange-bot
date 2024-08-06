@@ -1298,7 +1298,18 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
+ "xb-arb-finder",
  "xb-subscriber",
+ "xb-types",
+]
+
+[[package]]
+name = "xb-arb-finder"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "tokio-util",
+ "tracing",
  "xb-types",
 ]
 

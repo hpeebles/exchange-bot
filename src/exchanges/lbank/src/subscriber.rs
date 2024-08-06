@@ -9,7 +9,7 @@ use tokio::select;
 use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
-use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
+use xb_types::{Amount8Decimals, Exchange, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
 
@@ -49,6 +49,7 @@ impl ClientExt for WebSocketClient {
             match message {
                 DataMessage::MarketDepth(d) => {
                     let update = OrderbookState {
+                        exchange: Exchange::LBank,
                         timestamp_ms: 0,
                         bids: d
                             .depth
