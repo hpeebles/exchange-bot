@@ -34,7 +34,7 @@ pub struct OrderbookState {
 
 impl OrderbookState {
     pub fn best_bid(&self) -> Option<Order> {
-        self.bids.iter().rev().next().map(|(p, a)| Order {
+        self.bids.iter().next_back().map(|(p, a)| Order {
             exchange: self.exchange,
             price: *p,
             amount: *a,
