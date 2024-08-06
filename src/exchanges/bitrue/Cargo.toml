@@ -1,5 +1,5 @@
 [package]
-name = "xb-bitrue"
+name = "xb-exchanges-bitrue"
 version.workspace = true
 edition.workspace = true
 
@@ -11,4 +11,4 @@ serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
-xb-subscriber.path = "../../subscriber"
+xb-types.path = "../../types"

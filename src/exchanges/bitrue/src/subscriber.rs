@@ -1,3 +1,4 @@
+use crate::serialize_to_json;
 use async_trait::async_trait;
 use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
@@ -8,14 +9,12 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
-use xb_subscriber::{serialize_to_json, ExchangeSubscriber, Order, OrderbookUpdate};
+use xb_types::{ExchangeSubscriber, Order, OrderbookUpdate};
 
 const URL: &str = "wss://ws.bitrue.com/market/ws";
 
-#[allow(dead_code)]
-pub struct BitrueSubscriber {
-    sender: Sender<OrderbookUpdate>,
-}
+#[derive(Default)]
+pub struct BitrueSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
@@ -96,16 +95,13 @@ impl ClientExt for WebSocketClient {
 
 #[async_trait]
 impl ExchangeSubscriber for BitrueSubscriber {
-    fn new(sender: Sender<OrderbookUpdate>) -> Self {
-        BitrueSubscriber { sender }
-    }
-
-    async fn run_async(self, cancellation_token: CancellationToken) {
+    async fn run_async(
+        self,
+        sender: Sender<OrderbookUpdate>,
+        cancellation_token: CancellationToken,
+    ) {
         let (handle, future) = ezsockets::connect(
-            |handle| WebSocketClient {
-                handle,
-                sender: self.sender.clone(),
-            },
+            |handle| WebSocketClient { handle, sender },
             ClientConfig::new(URL),
         )
         .await;

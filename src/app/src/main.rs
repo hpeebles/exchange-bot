@@ -1,9 +1,6 @@
-use std::sync::mpsc::channel;
-use tokio::select;
 use tokio_util::sync::CancellationToken;
-use xb_bitrue::subscriber::BitrueSubscriber;
-use xb_lbank::subscriber::LBankSubscriber;
-use xb_subscriber::ExchangeSubscriber;
+use xb_subscriber::Subscriber;
+use xb_types::Exchange;
 
 #[tokio::main]
 async fn main() {
@@ -11,22 +8,12 @@ async fn main() {
 
     abort_on_panic();
 
-    let (tx, _rx) = channel();
     let shutdown = CancellationToken::new();
+    let subscriber = Subscriber::new(vec![Exchange::Bitrue, Exchange::LBank]);
 
-    select! {
-        _ = {
-            let lbank_service = LBankSubscriber::new(tx.clone());
-            lbank_service.run_async(shutdown.clone())
-        } => (),
-        _ = {
-            let bitrue_service = BitrueSubscriber::new(tx.clone());
-            bitrue_service.run_async(shutdown.clone())
-        } => (),
-        _ = tokio::signal::ctrl_c() => {
-            println!("Ctrl-c received");
-        },
-    }
+    let _rx = subscriber.run(shutdown.clone());
+
+    tokio::signal::ctrl_c().await.unwrap();
 
     println!("Service stopping");
     shutdown.cancel();

@@ -1168,13 +1168,12 @@ version = "0.1.0"
 dependencies = [
  "tokio",
  "tokio-util",
- "xb-bitrue",
- "xb-lbank",
  "xb-subscriber",
+ "xb-types",
 ]
 
 [[package]]
-name = "xb-bitrue"
+name = "xb-exchanges-bitrue"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1184,11 +1183,11 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "xb-subscriber",
+ "xb-types",
 ]
 
 [[package]]
-name = "xb-lbank"
+name = "xb-exchanges-lbank"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1197,7 +1196,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
- "xb-subscriber",
+ "xb-types",
 ]
 
 [[package]]
@@ -1205,8 +1204,22 @@ name = "xb-subscriber"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "futures",
  "serde",
  "serde_json",
+ "tokio",
+ "tokio-util",
+ "xb-exchanges-bitrue",
+ "xb-exchanges-lbank",
+ "xb-types",
+]
+
+[[package]]
+name = "xb-types"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
  "tokio-util",
 ]
 
