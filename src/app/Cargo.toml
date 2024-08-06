@@ -1,0 +1,11 @@
+[package]
+name = "xb-app"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio.workspace = true
+tokio-util.workspace = true
+xb-bitrue.path = "../exchanges/bitrue"
+xb-lbank.path = "../exchanges/lbank"
+xb-subscriber.path = "../subscriber"

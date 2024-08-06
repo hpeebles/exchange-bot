@@ -1,4 +1,3 @@
-use crate::{serialize_to_json, ExchangeSubscriber, Order, OrderbookUpdate};
 use async_trait::async_trait;
 use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
@@ -9,6 +8,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
+use xb_subscriber::{serialize_to_json, ExchangeSubscriber, Order, OrderbookUpdate};
 
 const URL: &str = "wss://ws.bitrue.com/market/ws";
 

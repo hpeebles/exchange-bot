@@ -1,0 +1,14 @@
+[package]
+name = "xb-bitrue"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+ezsockets.workspace = true
+flate2.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+xb-subscriber.path = "../../subscriber"
