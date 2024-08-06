@@ -2,10 +2,10 @@ use async_trait::async_trait;
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::sync::broadcast::Sender;
+use tokio::sync::broadcast::{Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum Exchange {
     LBank,
     Bitrue,
@@ -20,19 +20,55 @@ pub trait ExchangeSubscriber {
     );
 }
 
-#[derive(Debug)]
+pub trait OrderbookStateProcessor {
+    fn run(self, updates: Receiver<Arc<OrderbookState>>, cancellation_token: CancellationToken);
+}
+
+#[derive(Clone, Debug)]
 pub struct OrderbookState {
+    pub exchange: Exchange,
     pub timestamp_ms: u64,
     pub asks: BTreeMap<Price4Decimals, Amount8Decimals>,
     pub bids: BTreeMap<Price4Decimals, Amount8Decimals>,
 }
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+impl OrderbookState {
+    pub fn best_bid(&self) -> Option<Order> {
+        self.bids.iter().next_back().map(|(p, a)| Order {
+            exchange: self.exchange,
+            price: *p,
+            amount: *a,
+        })
+    }
+
+    pub fn best_ask(&self) -> Option<Order> {
+        self.asks.iter().next().map(|(p, a)| Order {
+            exchange: self.exchange,
+            price: *p,
+            amount: *a,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ArbOpportunity {
+    pub buy: Order,
+    pub sell: Order,
+}
+
+#[derive(Clone, Debug)]
+pub struct Order {
+    pub exchange: Exchange,
+    pub price: Price4Decimals,
+    pub amount: Amount8Decimals,
+}
+
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Price4Decimals {
     units: u128,
 }
 
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Amount8Decimals {
     units: u128,
 }

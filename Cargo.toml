@@ -3,6 +3,7 @@ members = [
     "src/app",
     "src/exchanges/bitrue",
     "src/exchanges/lbank",
+    "src/processors/arb_finder",
     "src/subscriber",
     "src/types"
 ]

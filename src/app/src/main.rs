@@ -1,8 +1,10 @@
 use std::io;
+use tokio::sync::broadcast::channel;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
+use xb_arb_finder::ArbFinder;
 use xb_subscriber::Subscriber;
-use xb_types::Exchange;
+use xb_types::{Exchange, OrderbookStateProcessor};
 
 #[tokio::main]
 async fn main() {
@@ -15,7 +17,13 @@ async fn main() {
     let shutdown = CancellationToken::new();
     let subscriber = Subscriber::new(vec![Exchange::Bitrue, Exchange::LBank]);
 
-    let _rx = subscriber.run(shutdown.clone());
+    let (arb_tx, _arb_rx) = channel(1024);
+
+    let arb_finder = ArbFinder::new(arb_tx);
+
+    let rx = subscriber.run(shutdown.clone());
+
+    arb_finder.run(rx, shutdown.clone());
 
     tokio::signal::ctrl_c().await.unwrap();
 

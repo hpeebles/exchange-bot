@@ -11,7 +11,7 @@ use tokio::select;
 use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
-use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
+use xb_types::{Amount8Decimals, Exchange, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://ws.bitrue.com/market/ws";
 
@@ -57,6 +57,7 @@ impl ClientExt for WebSocketClient {
 
         if let Ok(m) = serde_json::from_str::<MarketDepth>(&s) {
             let update = OrderbookState {
+                exchange: Exchange::Bitrue,
                 timestamp_ms: m.timestamp,
                 bids: m
                     .tick
