@@ -9,7 +9,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
-use xb_types::{ExchangeSubscriber, Order, OrderbookUpdate};
+use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://ws.bitrue.com/market/ws";
 
@@ -18,7 +18,7 @@ pub struct BitrueSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
-    sender: Sender<OrderbookUpdate>,
+    sender: Sender<OrderbookState>,
 }
 
 impl WebSocketClient {
@@ -54,16 +54,30 @@ impl ClientExt for WebSocketClient {
         println!("Bitrue: Received text: {s}");
 
         if let Ok(m) = serde_json::from_str::<MarketDepth>(&s) {
-            let update = OrderbookUpdate {
+            let update = OrderbookState {
                 timestamp_ms: m.timestamp,
-                best_bid: Order {
-                    price: f64::from_str(&m.tick.buys[0][0]).unwrap(),
-                    amount: (f64::from_str(&m.tick.buys[0][1]).unwrap() * 1_0000_0000f64) as u128,
-                },
-                best_ask: Order {
-                    price: f64::from_str(&m.tick.asks[0][0]).unwrap(),
-                    amount: (f64::from_str(&m.tick.asks[0][1]).unwrap() * 1_0000_0000f64) as u128,
-                },
+                bids: m
+                    .tick
+                    .buys
+                    .into_iter()
+                    .map(|b| {
+                        (
+                            Price4Decimals::from_str(&b[0]).unwrap(),
+                            Amount8Decimals::from_str(&b[1]).unwrap(),
+                        )
+                    })
+                    .collect(),
+                asks: m
+                    .tick
+                    .asks
+                    .into_iter()
+                    .map(|a| {
+                        (
+                            Price4Decimals::from_str(&a[0]).unwrap(),
+                            Amount8Decimals::from_str(&a[1]).unwrap(),
+                        )
+                    })
+                    .collect(),
             };
             self.sender.send(update).unwrap();
         } else if let Ok(Ping { ping }) = serde_json::from_str(&s) {
@@ -97,7 +111,7 @@ impl ClientExt for WebSocketClient {
 impl ExchangeSubscriber for BitrueSubscriber {
     async fn run_async(
         self,
-        sender: Sender<OrderbookUpdate>,
+        sender: Sender<OrderbookState>,
         cancellation_token: CancellationToken,
     ) {
         let (handle, future) = ezsockets::connect(

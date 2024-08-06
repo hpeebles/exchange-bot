@@ -2,7 +2,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 use xb_exchanges_bitrue::BitrueSubscriber;
 use xb_exchanges_lbank::LBankSubscriber;
-use xb_types::{Exchange, ExchangeSubscriber, OrderbookUpdate};
+use xb_types::{Exchange, ExchangeSubscriber, OrderbookState};
 
 pub struct Subscriber {
     exchanges: Vec<Exchange>,
@@ -13,7 +13,7 @@ impl Subscriber {
         Subscriber { exchanges }
     }
 
-    pub fn run(self, cancellation_token: CancellationToken) -> Receiver<OrderbookUpdate> {
+    pub fn run(self, cancellation_token: CancellationToken) -> Receiver<OrderbookState> {
         let (sender, receiver) = channel();
 
         tokio::spawn(self.run_async(sender, cancellation_token));
@@ -23,7 +23,7 @@ impl Subscriber {
 
     async fn run_async(
         self,
-        sender: Sender<OrderbookUpdate>,
+        sender: Sender<OrderbookState>,
         cancellation_token: CancellationToken,
     ) {
         let mut futures = Vec::new();

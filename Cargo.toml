@@ -17,7 +17,8 @@ async-trait = "0.1.81"
 ezsockets = { version = "0.6.3", features = ["rustls"] }
 flate2 = "1.0.31"
 futures = "0.3.30"
-tokio = { version = "1.39.2", features = ["full"] }
-tokio-util = "0.7.11"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
+test-case = "3.3.1"
+tokio = { version = "1.39.2", features = ["full"] }
+tokio-util = "0.7.11"

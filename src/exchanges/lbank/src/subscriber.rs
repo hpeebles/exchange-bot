@@ -7,7 +7,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Sender;
 use tokio::select;
 use tokio_util::sync::CancellationToken;
-use xb_types::{ExchangeSubscriber, Order, OrderbookUpdate};
+use xb_types::{Amount8Decimals, ExchangeSubscriber, OrderbookState, Price4Decimals};
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
 
@@ -16,7 +16,7 @@ pub struct LBankSubscriber {}
 
 struct WebSocketClient {
     handle: ezsockets::Client<Self>,
-    sender: Sender<OrderbookUpdate>,
+    sender: Sender<OrderbookState>,
 }
 
 impl WebSocketClient {
@@ -45,18 +45,30 @@ impl ClientExt for WebSocketClient {
         if let Ok(message) = serde_json::from_str(&text) {
             match message {
                 DataMessage::MarketDepth(d) => {
-                    let update = OrderbookUpdate {
+                    let update = OrderbookState {
                         timestamp_ms: 0,
-                        best_bid: Order {
-                            price: f64::from_str(&d.depth.bids[0][0]).unwrap(),
-                            amount: (f64::from_str(&d.depth.bids[0][1]).unwrap() * 1_0000_0000f64)
-                                as u128,
-                        },
-                        best_ask: Order {
-                            price: f64::from_str(&d.depth.asks[0][0]).unwrap(),
-                            amount: (f64::from_str(&d.depth.asks[0][1]).unwrap() * 1_0000_0000f64)
-                                as u128,
-                        },
+                        bids: d
+                            .depth
+                            .bids
+                            .into_iter()
+                            .map(|b| {
+                                (
+                                    Price4Decimals::from_str(&b[0]).unwrap(),
+                                    Amount8Decimals::from_str(&b[1]).unwrap(),
+                                )
+                            })
+                            .collect(),
+                        asks: d
+                            .depth
+                            .asks
+                            .into_iter()
+                            .map(|a| {
+                                (
+                                    Price4Decimals::from_str(&a[0]).unwrap(),
+                                    Amount8Decimals::from_str(&a[1]).unwrap(),
+                                )
+                            })
+                            .collect(),
                     };
                     println!("LBank: Received update: {update:?}");
                     self.sender.send(update).unwrap();
@@ -97,7 +109,7 @@ impl ClientExt for WebSocketClient {
 impl ExchangeSubscriber for LBankSubscriber {
     async fn run_async(
         self,
-        sender: Sender<OrderbookUpdate>,
+        sender: Sender<OrderbookState>,
         cancellation_token: CancellationToken,
     ) {
         let (handle, future) = ezsockets::connect(
