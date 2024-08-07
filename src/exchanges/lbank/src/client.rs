@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::info;
 use xb_types::{ExchangeOrderExecutor, PendingOrder};
 
-const CREATE_ORDER_URL: &str = "https://www.lbkex.net/v2/supplement/create_order_test.do";
+const BASE_URL: &str = "https://www.lbkex.net";
 
 pub struct LBankClient {
     api_key: String,
@@ -23,6 +23,42 @@ impl LBankClient {
             secret_key,
             client: Client::new(),
         }
+    }
+
+    async fn post_request(&self, path: &str, mut params: BTreeMap<&'static str, String>) {
+        params.insert("api_key", self.api_key.clone());
+        params.insert("echostr", generate_echostr());
+        params.insert("signature_method", "HmacSHA256".to_string());
+        params.insert(
+            "timestamp",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .to_string(),
+        );
+
+        let mut query = String::new();
+        for (key, value) in params {
+            push_query_param(&mut query, key, value.as_str());
+        }
+
+        let sig = self.get_signature(&query);
+        push_query_param(&mut query, "sign", &sig);
+
+        let response = self
+            .client
+            .post(format!("{BASE_URL}{path}?{query}"))
+            .header("contentType", "application/x-www-form-urlencoded")
+            .send()
+            .await
+            .unwrap();
+
+        info!("LBank: Response: {response:?}");
+
+        let content = response.text().await.unwrap();
+
+        info!("LBank: Response content: {content}");
     }
 
     fn get_signature(&self, query: &str) -> String {
@@ -41,19 +77,8 @@ impl LBankClient {
 impl ExchangeOrderExecutor for LBankClient {
     async fn submit_order(&self, order: PendingOrder) -> Result<String, String> {
         let mut params = BTreeMap::new();
-        params.insert("api_key", self.api_key.clone());
-        params.insert("echostr", generate_echostr());
-        params.insert("signature_method", "HmacSHA256".to_string());
         params.insert("symbol", "chat_usdt".to_string());
         params.insert("amount", order.amount().to_string());
-        params.insert(
-            "timestamp",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .to_string(),
-        );
 
         match order {
             PendingOrder::Limit(o) => {
@@ -81,27 +106,8 @@ impl ExchangeOrderExecutor for LBankClient {
             }
         }
 
-        let mut query = String::new();
-        for (key, value) in params {
-            push_query_param(&mut query, key, value.as_str());
-        }
-
-        let sig = self.get_signature(&query);
-        push_query_param(&mut query, "sign", &sig);
-
-        let response = self
-            .client
-            .post(format!("{CREATE_ORDER_URL}?{query}"))
-            .header("contentType", "application/x-www-form-urlencoded")
-            .send()
-            .await
-            .unwrap();
-
-        info!("LBank: Response: {response:?}");
-
-        let content = response.text().await.unwrap();
-
-        info!("LBank: Response content: {content}");
+        self.post_request("/v2/supplement/create_order.do", params)
+            .await;
 
         todo!()
     }

@@ -11,6 +11,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 xb-arb-finder.path = "../processors/arb_finder"
 xb-cashout.path = "../processors/cashout"
+xb-exchanges-bitrue.path = "../exchanges/bitrue"
 xb-exchanges-lbank.path = "../exchanges/lbank"
 xb-order-executor.path = "../order_executor"
 xb-subscriber.path = "../subscriber"
