@@ -2,6 +2,7 @@ use crate::serialize_to_json;
 use async_trait::async_trait;
 use ezsockets::client::ClientCloseMode;
 use ezsockets::{ClientConfig, ClientExt, Error, MessageSignal, WSError};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -9,7 +10,7 @@ use tokio::select;
 use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
-use xb_types::{Amount8Decimals, Exchange, ExchangeSubscriber, OrderbookState, Price4Decimals};
+use xb_types::{Exchange, ExchangeSubscriber, OrderbookState};
 
 const URL: &str = "wss://www.lbkex.net/ws/V2/";
 
@@ -57,8 +58,8 @@ impl ClientExt for WebSocketClient {
                             .into_iter()
                             .map(|b| {
                                 (
-                                    Price4Decimals::from_str(&b[0]).unwrap(),
-                                    Amount8Decimals::from_str(&b[1]).unwrap(),
+                                    Decimal::from_str(&b[0]).unwrap(),
+                                    Decimal::from_str(&b[1]).unwrap(),
                                 )
                             })
                             .collect(),
@@ -68,8 +69,8 @@ impl ClientExt for WebSocketClient {
                             .into_iter()
                             .map(|a| {
                                 (
-                                    Price4Decimals::from_str(&a[0]).unwrap(),
-                                    Amount8Decimals::from_str(&a[1]).unwrap(),
+                                    Decimal::from_str(&a[0]).unwrap(),
+                                    Decimal::from_str(&a[1]).unwrap(),
                                 )
                             })
                             .collect(),
