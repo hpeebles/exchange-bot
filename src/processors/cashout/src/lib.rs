@@ -8,8 +8,8 @@ use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_types::{
-    Amount8Decimals, Exchange, OrderbookState, OrderbookStateProcessor, PendingMarketOrder,
-    Price4Decimals,
+    Amount8Decimals, Direction, Exchange, OrderbookState, OrderbookStateProcessor,
+    PendingMarketOrder, PendingOrder, Price4Decimals,
 };
 
 const ONE_DAY: Duration = Duration::from_secs(24 * 60 * 60);
@@ -18,7 +18,7 @@ pub struct Cashout {
     average_interval: Duration,
     amount_to_sell_per_iteration: Amount8Decimals,
     min_price: Option<Price4Decimals>,
-    order_sender: Sender<Arc<PendingMarketOrder>>,
+    order_sender: Sender<Arc<PendingOrder>>,
     asks_per_exchange: HashMap<Exchange, BTreeMap<Price4Decimals, Amount8Decimals>>,
 }
 
@@ -27,7 +27,7 @@ impl Cashout {
         average_interval: Duration,
         amount_per_day: Amount8Decimals,
         min_price: Option<Price4Decimals>,
-        order_sender: Sender<Arc<PendingMarketOrder>>,
+        order_sender: Sender<Arc<PendingOrder>>,
     ) -> Cashout {
         let amount_to_sell_per_iteration = Amount8Decimals::from_units(
             amount_per_day.units() * average_interval.as_millis() / ONE_DAY.as_millis(),
@@ -67,11 +67,12 @@ impl Cashout {
                     {
                         let order = PendingMarketOrder {
                             exchange,
+                            direction: Direction::Sell,
                             amount: self.amount_to_sell_per_iteration,
                             expected_return,
                         };
                         info!("Cashout: {order:?}");
-                        self.order_sender.send(Arc::new(order)).unwrap();
+                        self.order_sender.send(Arc::new(PendingOrder::Market(order))).unwrap();
                     } else {
                         info!("Cashout: No cashout available");
                     }

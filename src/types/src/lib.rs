@@ -21,6 +21,11 @@ pub trait ExchangeSubscriber {
     );
 }
 
+#[async_trait]
+pub trait ExchangeOrderExecutor: Send {
+    async fn submit_order(&self, order: PendingOrder) -> Result<String, String>;
+}
+
 pub trait OrderbookStateProcessor {
     fn run(self, updates: Receiver<Arc<OrderbookState>>, cancellation_token: CancellationToken);
 }
@@ -65,10 +70,60 @@ pub struct Order {
 }
 
 #[derive(Clone, Debug)]
+pub enum PendingOrder {
+    Limit(PendingLimitOrder),
+    Market(PendingMarketOrder),
+}
+
+impl PendingOrder {
+    pub fn exchange(&self) -> Exchange {
+        match self {
+            PendingOrder::Limit(o) => o.exchange,
+            PendingOrder::Market(o) => o.exchange,
+        }
+    }
+
+    pub fn direction(&self) -> Direction {
+        match self {
+            PendingOrder::Limit(o) => o.direction,
+            PendingOrder::Market(o) => o.direction,
+        }
+    }
+
+    pub fn amount(&self) -> Amount8Decimals {
+        match self {
+            PendingOrder::Limit(o) => o.amount,
+            PendingOrder::Market(o) => o.amount,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PendingLimitOrder {
+    pub exchange: Exchange,
+    pub direction: Direction,
+    pub amount: Amount8Decimals,
+    pub price: Price4Decimals,
+}
+
+#[derive(Clone, Debug)]
 pub struct PendingMarketOrder {
     pub exchange: Exchange,
+    pub direction: Direction,
     pub amount: Amount8Decimals,
     pub expected_return: Amount8Decimals,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum Direction {
+    Buy,
+    Sell,
+}
+
+impl Direction {
+    pub fn is_buy(&self) -> bool {
+        matches!(self, Direction::Buy)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]

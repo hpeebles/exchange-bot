@@ -3,6 +3,7 @@ members = [
     "src/app",
     "src/exchanges/bitrue",
     "src/exchanges/lbank",
+    "src/order_executor",
     "src/processors/arb_finder",
     "src/processors/cashout",
     "src/subscriber",
@@ -20,8 +21,14 @@ dotenv = "0.15.0"
 ezsockets = { version = "0.6.3", features = ["rustls"] }
 flate2 = "1.0.31"
 futures = "0.3.30"
+hex = "0.4.3"
+hmac = "0.12.1"
+md5 = "0.7.0"
+rand = "0.8.5"
+reqwest = "0.12.5"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
+sha2 = "0.10.8"
 test-case = "3.3.1"
 tokio = { version = "1.39.2", features = ["full"] }
 tokio-util = "0.7.11"
