@@ -6,6 +6,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_arb_finder::ArbFinder;
 use xb_cashout::Cashout;
+use xb_exchanges_bitrue::BitrueClient;
 use xb_exchanges_lbank::LBankClient;
 use xb_order_executor::OrderExecutorBuilder;
 use xb_subscriber::Subscriber;
@@ -58,13 +59,19 @@ async fn main() {
     }
 
     if is_enabled("ORDER_EXECUTOR") {
+        let bitrue_client = BitrueClient::new(
+            get_config("BITRUE_API_KEY").unwrap(),
+            get_config("BITRUE_SECRET_KEY").unwrap(),
+        );
         let lbank_client = LBankClient::new(
             get_config("LBANK_API_KEY").unwrap(),
             get_config("LBANK_SECRET_KEY").unwrap(),
         );
         let order_executor = OrderExecutorBuilder::new()
+            .with_exchange(Exchange::Bitrue, bitrue_client)
             .with_exchange(Exchange::LBank, lbank_client)
             .build();
+
         order_executor.run(order_rx, shutdown.clone());
     }
 
