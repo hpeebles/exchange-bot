@@ -1,4 +1,5 @@
 use std::io;
+use std::str::FromStr;
 use std::time::Duration;
 use tokio::sync::broadcast::channel;
 use tokio_util::sync::CancellationToken;
@@ -6,10 +7,12 @@ use tracing::info;
 use xb_arb_finder::ArbFinder;
 use xb_cashout::Cashout;
 use xb_subscriber::Subscriber;
-use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor, Price4Decimals};
+use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor};
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().unwrap();
+
     tracing_subscriber::fmt().with_writer(io::stdout).init();
 
     info!("Service started");
@@ -17,29 +20,41 @@ async fn main() {
     abort_on_panic();
 
     let shutdown = CancellationToken::new();
-    let subscriber = Subscriber::new(vec![Exchange::Bitrue, Exchange::LBank]);
+    let mut exchanges = Vec::new();
+    if is_enabled("BITRUE") {
+        exchanges.push(Exchange::Bitrue);
+    }
+    if is_enabled("LBANK") {
+        exchanges.push(Exchange::LBank);
+    }
 
-    let (arb_tx, _arb_rx) = channel(1024);
-    let arb_finder = ArbFinder::new(arb_tx);
-
-    let (cashout_tx, _cashout_rx) = channel(1024);
-    let cashout = Cashout::new(
-        Duration::from_secs(300),
-        Amount8Decimals::from_whole(1000),
-        Some(Price4Decimals::from_units(5000)),
-        cashout_tx,
-    );
-
+    let subscriber = Subscriber::new(exchanges);
     let subscription_manager = subscriber.run(shutdown.clone());
 
-    arb_finder.run(
-        subscription_manager.subscribe_orderbook_state(),
-        shutdown.clone(),
-    );
-    cashout.run(
-        subscription_manager.subscribe_orderbook_state(),
-        shutdown.clone(),
-    );
+    let (arb_tx, _arb_rx) = channel(1024);
+    let (cashout_tx, _cashout_rx) = channel(1024);
+
+    if is_enabled("ARB_FINDER") {
+        let arb_finder = ArbFinder::new(arb_tx.clone());
+        arb_finder.run(
+            subscription_manager.subscribe_orderbook_state(),
+            shutdown.clone(),
+        );
+    }
+    if is_enabled("CASHOUT") {
+        if let Some(amount) = get_config("CASHOUT_PER_DAY") {
+            let cashout = Cashout::new(
+                Duration::from_secs(get_config("CASHOUT_DURATION_SECS").unwrap_or(300)),
+                Amount8Decimals::from_whole(amount),
+                get_config("CASHOUT_MIN_PRICE"),
+                cashout_tx.clone(),
+            );
+            cashout.run(
+                subscription_manager.subscribe_orderbook_state(),
+                shutdown.clone(),
+            );
+        }
+    }
 
     tokio::signal::ctrl_c().await.unwrap();
 
@@ -54,4 +69,13 @@ pub fn abort_on_panic() {
         default_hook(panic_info);
         std::process::abort();
     }));
+}
+
+fn is_enabled(name: &str) -> bool {
+    get_config(&format!("{name}_ENABLED")).unwrap_or_default()
+}
+
+fn get_config<T: FromStr>(key: &str) -> Option<T> {
+    let value = dotenv::var(key).ok()?;
+    Some(T::from_str(&value).unwrap_or_else(|_| panic!("Failed to read config value: {key}")))
 }
