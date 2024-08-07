@@ -9,17 +9,23 @@ pub struct Subscriber {
     exchanges: Vec<Exchange>,
 }
 
+pub struct SubscriptionManager {
+    orderbook_state: Receiver<Arc<OrderbookState>>,
+}
+
 impl Subscriber {
     pub fn new(exchanges: Vec<Exchange>) -> Subscriber {
         Subscriber { exchanges }
     }
 
-    pub fn run(self, cancellation_token: CancellationToken) -> Receiver<Arc<OrderbookState>> {
+    pub fn run(self, cancellation_token: CancellationToken) -> SubscriptionManager {
         let (sender, receiver) = channel(1024);
 
         tokio::spawn(self.run_async(sender, cancellation_token));
 
-        receiver
+        SubscriptionManager {
+            orderbook_state: receiver,
+        }
     }
 
     async fn run_async(
@@ -44,5 +50,11 @@ impl Subscriber {
         }
 
         futures::future::select_all(futures).await;
+    }
+}
+
+impl SubscriptionManager {
+    pub fn subscribe_orderbook_state(&self) -> Receiver<Arc<OrderbookState>> {
+        self.orderbook_state.resubscribe()
     }
 }

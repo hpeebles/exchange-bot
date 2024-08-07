@@ -30,10 +30,16 @@ async fn main() {
         cashout_tx,
     );
 
-    let rx = subscriber.run(shutdown.clone());
+    let subscription_manager = subscriber.run(shutdown.clone());
 
-    arb_finder.run(rx.resubscribe(), shutdown.clone());
-    cashout.run(rx.resubscribe(), shutdown.clone());
+    arb_finder.run(
+        subscription_manager.subscribe_orderbook_state(),
+        shutdown.clone(),
+    );
+    cashout.run(
+        subscription_manager.subscribe_orderbook_state(),
+        shutdown.clone(),
+    );
 
     tokio::signal::ctrl_c().await.unwrap();
 
