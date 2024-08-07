@@ -11,6 +11,7 @@ hmac.workspace = true
 md5.workspace = true
 rand.workspace = true
 reqwest.workspace = true
+rust_decimal.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

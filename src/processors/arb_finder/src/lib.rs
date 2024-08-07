@@ -5,7 +5,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_types::{
-    Amount8Decimals, ArbOpportunity, Direction, Exchange, OrderbookState, OrderbookStateProcessor,
+    ArbOpportunity, Direction, Exchange, OrderbookState, OrderbookStateProcessor,
     PendingMarketOrder, PendingOrder,
 };
 
@@ -82,9 +82,7 @@ impl ArbFinder {
                 exchange: arb.sell.exchange,
                 direction: Direction::Sell,
                 amount: arb.sell.amount,
-                expected_return: Amount8Decimals::from_units(
-                    arb.sell.amount.units() * arb.sell.price.units() / 1_0000_0000,
-                ),
+                expected_return: arb.sell.amount * arb.sell.price,
             })))
             .unwrap();
 
@@ -93,9 +91,7 @@ impl ArbFinder {
                 exchange: arb.buy.exchange,
                 direction: Direction::Buy,
                 amount: arb.buy.amount,
-                expected_return: Amount8Decimals::from_units(
-                    arb.buy.amount.units() * arb.buy.price.units() / 1_0000_0000,
-                ),
+                expected_return: arb.buy.amount * arb.buy.price,
             })))
             .unwrap();
     }

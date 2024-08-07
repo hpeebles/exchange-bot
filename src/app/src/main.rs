@@ -10,7 +10,7 @@ use xb_exchanges_bitrue::BitrueClient;
 use xb_exchanges_lbank::LBankClient;
 use xb_order_executor::OrderExecutorBuilder;
 use xb_subscriber::Subscriber;
-use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor};
+use xb_types::{Exchange, OrderbookStateProcessor};
 
 #[tokio::main]
 async fn main() {
@@ -47,7 +47,7 @@ async fn main() {
         if let Some(amount) = get_config("CASHOUT_AMOUNT_PER_DAY") {
             let cashout = Cashout::new(
                 Duration::from_secs(get_config("CASHOUT_AVG_INTERVAL_SECS").unwrap_or(300)),
-                Amount8Decimals::from_whole(amount),
+                amount,
                 get_config("CASHOUT_MIN_PRICE"),
                 order_tx.clone(),
             );

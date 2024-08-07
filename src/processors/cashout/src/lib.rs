@@ -1,4 +1,4 @@
-use std::cmp::min;
+use rust_decimal::Decimal;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use std::time::Duration;
@@ -8,30 +8,29 @@ use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_types::{
-    Amount8Decimals, Direction, Exchange, OrderbookState, OrderbookStateProcessor,
-    PendingMarketOrder, PendingOrder, Price4Decimals,
+    Direction, Exchange, OrderbookState, OrderbookStateProcessor, PendingMarketOrder, PendingOrder,
 };
 
 const ONE_DAY: Duration = Duration::from_secs(24 * 60 * 60);
 
 pub struct Cashout {
     average_interval: Duration,
-    amount_to_sell_per_iteration: Amount8Decimals,
-    min_price: Option<Price4Decimals>,
+    amount_to_sell_per_iteration: Decimal,
+    min_price: Option<Decimal>,
     order_sender: Sender<Arc<PendingOrder>>,
-    asks_per_exchange: HashMap<Exchange, BTreeMap<Price4Decimals, Amount8Decimals>>,
+    asks_per_exchange: HashMap<Exchange, BTreeMap<Decimal, Decimal>>,
 }
 
 impl Cashout {
     pub fn new(
         average_interval: Duration,
-        amount_per_day: Amount8Decimals,
-        min_price: Option<Price4Decimals>,
+        amount_per_day: Decimal,
+        min_price: Option<Decimal>,
         order_sender: Sender<Arc<PendingOrder>>,
     ) -> Cashout {
-        let amount_to_sell_per_iteration = Amount8Decimals::from_units(
-            amount_per_day.units() * average_interval.as_millis() / ONE_DAY.as_millis(),
-        );
+        let amount_to_sell_per_iteration = amount_per_day
+            * Decimal::from(average_interval.as_millis())
+            / Decimal::from(ONE_DAY.as_millis());
 
         Cashout {
             average_interval,
@@ -87,26 +86,23 @@ impl Cashout {
         self.average_interval
     }
 
-    fn calculate_return(
-        &self,
-        asks: &BTreeMap<Price4Decimals, Amount8Decimals>,
-    ) -> Option<Amount8Decimals> {
-        let mut total_return = 0;
-        let mut total_remaining = self.amount_to_sell_per_iteration.units();
+    fn calculate_return(&self, asks: &BTreeMap<Decimal, Decimal>) -> Option<Decimal> {
+        let mut total_return = Decimal::ZERO;
+        let mut total_remaining = self.amount_to_sell_per_iteration;
 
-        for (price, amount) in asks {
+        for (&price, &amount) in asks {
             if let Some(min_price) = self.min_price {
-                if *price < min_price {
+                if price < min_price {
                     break;
                 }
             }
 
-            let amount_units = min(amount.units(), total_remaining);
-            total_return += amount_units * price.units() / 1_0000;
-            total_remaining -= amount_units;
+            let amount = amount.min(total_remaining);
+            total_return += amount * price;
+            total_remaining -= amount;
 
-            if total_remaining == 0 {
-                return Some(Amount8Decimals::from_units(total_return));
+            if total_remaining == Decimal::ZERO {
+                return Some(total_return);
             }
         }
 
