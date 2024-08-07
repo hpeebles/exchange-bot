@@ -4,17 +4,20 @@ use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 use tracing::info;
-use xb_types::{ArbOpportunity, Exchange, OrderbookState, OrderbookStateProcessor};
+use xb_types::{
+    Amount8Decimals, ArbOpportunity, Direction, Exchange, OrderbookState, OrderbookStateProcessor,
+    PendingMarketOrder, PendingOrder,
+};
 
 pub struct ArbFinder {
-    arb_sender: Sender<Arc<ArbOpportunity>>,
+    order_sender: Sender<Arc<PendingOrder>>,
     state_per_exchange: HashMap<Exchange, OrderbookState>,
 }
 
 impl ArbFinder {
-    pub fn new(arb_sender: Sender<Arc<ArbOpportunity>>) -> ArbFinder {
+    pub fn new(order_sender: Sender<Arc<PendingOrder>>) -> ArbFinder {
         ArbFinder {
-            arb_sender,
+            order_sender,
             state_per_exchange: HashMap::new(),
         }
     }
@@ -73,7 +76,28 @@ impl ArbFinder {
 
     fn notify_arb(&self, arb: ArbOpportunity) {
         info!("Found arb: {arb:?}");
-        self.arb_sender.send(Arc::new(arb)).unwrap();
+
+        self.order_sender
+            .send(Arc::new(PendingOrder::Market(PendingMarketOrder {
+                exchange: arb.sell.exchange,
+                direction: Direction::Sell,
+                amount: arb.sell.amount,
+                expected_return: Amount8Decimals::from_units(
+                    arb.sell.amount.units() * arb.sell.price.units() / 1_0000_0000,
+                ),
+            })))
+            .unwrap();
+
+        self.order_sender
+            .send(Arc::new(PendingOrder::Market(PendingMarketOrder {
+                exchange: arb.buy.exchange,
+                direction: Direction::Buy,
+                amount: arb.buy.amount,
+                expected_return: Amount8Decimals::from_units(
+                    arb.buy.amount.units() * arb.buy.price.units() / 1_0000_0000,
+                ),
+            })))
+            .unwrap();
     }
 }
 

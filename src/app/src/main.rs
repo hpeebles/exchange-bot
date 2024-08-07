@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_arb_finder::ArbFinder;
 use xb_cashout::Cashout;
+use xb_exchanges_lbank::LBankClient;
+use xb_order_executor::OrderExecutorBuilder;
 use xb_subscriber::Subscriber;
 use xb_types::{Amount8Decimals, Exchange, OrderbookStateProcessor};
 
@@ -31,29 +33,39 @@ async fn main() {
     let subscriber = Subscriber::new(exchanges);
     let subscription_manager = subscriber.run(shutdown.clone());
 
-    let (arb_tx, _arb_rx) = channel(1024);
-    let (cashout_tx, _cashout_rx) = channel(1024);
+    let (order_tx, order_rx) = channel(1024);
 
     if is_enabled("ARB_FINDER") {
-        let arb_finder = ArbFinder::new(arb_tx.clone());
+        let arb_finder = ArbFinder::new(order_tx.clone());
         arb_finder.run(
             subscription_manager.subscribe_orderbook_state(),
             shutdown.clone(),
         );
     }
     if is_enabled("CASHOUT") {
-        if let Some(amount) = get_config("CASHOUT_PER_DAY") {
+        if let Some(amount) = get_config("CASHOUT_AMOUNT_PER_DAY") {
             let cashout = Cashout::new(
-                Duration::from_secs(get_config("CASHOUT_DURATION_SECS").unwrap_or(300)),
+                Duration::from_secs(get_config("CASHOUT_AVG_INTERVAL_SECS").unwrap_or(300)),
                 Amount8Decimals::from_whole(amount),
                 get_config("CASHOUT_MIN_PRICE"),
-                cashout_tx.clone(),
+                order_tx.clone(),
             );
             cashout.run(
                 subscription_manager.subscribe_orderbook_state(),
                 shutdown.clone(),
             );
         }
+    }
+
+    if is_enabled("ORDER_EXECUTOR") {
+        let lbank_client = LBankClient::new(
+            get_config("LBANK_API_KEY").unwrap(),
+            get_config("LBANK_SECRET_KEY").unwrap(),
+        );
+        let order_executor = OrderExecutorBuilder::new()
+            .with_exchange(Exchange::LBank, lbank_client)
+            .build();
+        order_executor.run(order_rx, shutdown.clone());
     }
 
     tokio::signal::ctrl_c().await.unwrap();
