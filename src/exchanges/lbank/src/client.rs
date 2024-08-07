@@ -118,5 +118,5 @@ fn push_query_param(q: &mut String, key: &str, value: &str) {
 
 fn generate_echostr() -> String {
     let bytes: [u8; 16] = random();
-    hex::encode(&bytes)
+    hex::encode(bytes)
 }

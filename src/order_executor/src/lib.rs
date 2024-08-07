@@ -10,6 +10,7 @@ pub struct OrderExecutor {
     exchanges: HashMap<Exchange, Box<dyn ExchangeOrderExecutor>>,
 }
 
+#[derive(Default)]
 pub struct OrderExecutorBuilder {
     exchanges: HashMap<Exchange, Box<dyn ExchangeOrderExecutor>>,
 }
