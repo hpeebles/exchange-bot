@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::select;
 use tokio::sync::broadcast::Receiver;
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::error;
 use xb_types::{Exchange, ExchangeOrderExecutor, PendingOrder};
@@ -16,8 +17,12 @@ pub struct OrderExecutorBuilder {
 }
 
 impl OrderExecutor {
-    pub fn run(self, receiver: Receiver<Arc<PendingOrder>>, cancellation_token: CancellationToken) {
-        tokio::spawn(self.run_async(receiver, cancellation_token));
+    pub fn run(
+        self,
+        receiver: Receiver<Arc<PendingOrder>>,
+        cancellation_token: CancellationToken,
+    ) -> JoinHandle<()> {
+        tokio::spawn(self.run_async(receiver, cancellation_token))
     }
 
     async fn run_async(

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::task::JoinHandle;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
@@ -35,8 +36,6 @@ impl Cashout {
                 .unwrap(),
         );
 
-        info!("Cashout started. AmountPerDay: {amount_per_day}. AmountPerIteration: {amount_per_iteration}. AverageInterval: {average_interval:?}. MinPrice: {min_price:?}");
-
         Cashout {
             average_interval,
             amount_per_iteration,
@@ -51,6 +50,11 @@ impl Cashout {
         mut updates: Receiver<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
+        info!(
+            "Cashout started. AmountPerIteration: {}. AverageInterval: {:?}. MinPrice: {:?}",
+            self.amount_per_iteration, self.average_interval, self.min_price
+        );
+
         let sleep = tokio::time::sleep(self.next_duration());
         tokio::pin!(sleep);
 
@@ -85,6 +89,8 @@ impl Cashout {
                 _ = cancellation_token.cancelled() => break,
             }
         }
+
+        info!("Cashout stopped");
     }
 
     fn next_duration(&self) -> Duration {
@@ -116,7 +122,11 @@ impl Cashout {
 }
 
 impl OrderbookStateProcessor for Cashout {
-    fn run(self, updates: Receiver<Arc<OrderbookState>>, cancellation_token: CancellationToken) {
-        tokio::spawn(self.run_async(updates, cancellation_token));
+    fn run(
+        self,
+        updates: Receiver<Arc<OrderbookState>>,
+        cancellation_token: CancellationToken,
+    ) -> JoinHandle<()> {
+        tokio::spawn(self.run_async(updates, cancellation_token))
     }
 }
