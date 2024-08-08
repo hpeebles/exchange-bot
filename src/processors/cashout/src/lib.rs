@@ -85,7 +85,7 @@ impl Cashout {
                     } else {
                         info!("Cashout: No cashout available");
                     }
-                    sleep.as_mut().reset(Instant::now() + self.next_duration());
+                    sleep.as_mut().reset(Instant::now() + self.next_interval());
                 }
                 _ = cancellation_token.cancelled() => break,
             }
