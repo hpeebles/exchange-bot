@@ -1,3 +1,4 @@
+use rand::random;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use std::collections::{BTreeMap, HashMap};
@@ -8,7 +9,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
 use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
-use tracing::info;
+use tracing::{info, trace};
 use xb_types::{
     Direction, Exchange, OrderbookState, OrderbookStateProcessor, PendingMarketOrder, PendingOrder,
 };
@@ -55,7 +56,7 @@ impl Cashout {
             self.amount_per_iteration, self.average_interval, self.min_price
         );
 
-        let sleep = tokio::time::sleep(self.next_duration());
+        let sleep = tokio::time::sleep(self.next_interval());
         tokio::pin!(sleep);
 
         loop {
@@ -84,7 +85,7 @@ impl Cashout {
                     } else {
                         info!("Cashout: No cashout available");
                     }
-                    sleep.as_mut().reset(Instant::now() + self.next_duration());
+                    sleep.as_mut().reset(Instant::now() + self.next_interval());
                 }
                 _ = cancellation_token.cancelled() => break,
             }
@@ -93,8 +94,16 @@ impl Cashout {
         info!("Cashout stopped");
     }
 
-    fn next_duration(&self) -> Duration {
-        self.average_interval
+    fn next_interval(&self) -> Duration {
+        // Generate random interval such that the events follow a Poisson distribution
+        // (https://en.wikipedia.org/wiki/Poisson_distribution), where on average the desired amount
+        // will be cashed out per day
+        let rand = -random::<f64>().ln();
+
+        let interval =
+            Duration::from_millis((rand * self.average_interval.as_millis() as f64) as u64);
+        trace!("Cashout: next interval: {interval:?}");
+        interval
     }
 
     fn calculate_return(&self, asks: &BTreeMap<Decimal, Decimal>) -> Option<Decimal> {
