@@ -3,6 +3,7 @@ use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -26,7 +27,11 @@ pub trait ExchangeOrderExecutor: Send {
 }
 
 pub trait OrderbookStateProcessor {
-    fn run(self, updates: Receiver<Arc<OrderbookState>>, cancellation_token: CancellationToken);
+    fn run(
+        self,
+        updates: Receiver<Arc<OrderbookState>>,
+        cancellation_token: CancellationToken,
+    ) -> JoinHandle<()>;
 }
 
 #[derive(Clone, Debug)]

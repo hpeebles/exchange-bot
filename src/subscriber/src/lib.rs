@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use tokio::sync::broadcast::{channel, Receiver, Sender};
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use xb_exchanges_bitrue::BitrueSubscriber;
 use xb_exchanges_lbank::LBankSubscriber;
@@ -18,14 +19,20 @@ impl Subscriber {
         Subscriber { exchanges }
     }
 
-    pub fn run(self, cancellation_token: CancellationToken) -> SubscriptionManager {
+    pub fn run(
+        self,
+        cancellation_token: CancellationToken,
+    ) -> (SubscriptionManager, JoinHandle<()>) {
         let (sender, receiver) = channel(1024);
 
-        tokio::spawn(self.run_async(sender, cancellation_token));
+        let handle = tokio::spawn(self.run_async(sender, cancellation_token));
 
-        SubscriptionManager {
-            orderbook_state: receiver,
-        }
+        (
+            SubscriptionManager {
+                orderbook_state: receiver,
+            },
+            handle,
+        )
     }
 
     async fn run_async(
@@ -49,7 +56,7 @@ impl Subscriber {
             }
         }
 
-        futures::future::select_all(futures).await;
+        futures::future::join_all(futures).await;
     }
 }
 

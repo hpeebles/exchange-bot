@@ -31,17 +31,21 @@ async fn main() {
         exchanges.push(Exchange::LBank);
     }
 
+    let mut handles = Vec::new();
+
     let subscriber = Subscriber::new(exchanges);
-    let subscription_manager = subscriber.run(shutdown.clone());
+    let (subscription_manager, subscriber_handle) = subscriber.run(shutdown.clone());
+    handles.push(subscriber_handle);
 
     let (order_tx, order_rx) = channel(1024);
 
     if is_enabled("ARB_FINDER") {
         let arb_finder = ArbFinder::new(order_tx.clone());
-        arb_finder.run(
+        let handle = arb_finder.run(
             subscription_manager.subscribe_orderbook_state(),
             shutdown.clone(),
         );
+        handles.push(handle);
     }
     if is_enabled("CASHOUT") {
         if let Some(amount) = get_config("CASHOUT_AMOUNT_PER_DAY") {
@@ -51,10 +55,11 @@ async fn main() {
                 get_config("CASHOUT_MIN_PRICE"),
                 order_tx.clone(),
             );
-            cashout.run(
+            let handle = cashout.run(
                 subscription_manager.subscribe_orderbook_state(),
                 shutdown.clone(),
             );
+            handles.push(handle);
         }
     }
 
@@ -72,13 +77,17 @@ async fn main() {
             .with_exchange(Exchange::LBank, lbank_client)
             .build();
 
-        order_executor.run(order_rx, shutdown.clone());
+        let handle = order_executor.run(order_rx, shutdown.clone());
+        handles.push(handle);
     }
 
     tokio::signal::ctrl_c().await.unwrap();
 
     info!("Service stopping");
     shutdown.cancel();
+    for handle in handles {
+        handle.await.unwrap();
+    }
     info!("Service stopped");
 }
 

@@ -117,6 +117,8 @@ impl ExchangeSubscriber for LBankSubscriber {
         sender: Sender<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
+        info!("LBankSubscriber started");
+
         let (handle, future) = ezsockets::connect(
             |handle| WebSocketClient { handle, sender },
             ClientConfig::new(URL),
@@ -130,7 +132,7 @@ impl ExchangeSubscriber for LBankSubscriber {
             }
         }
 
-        info!("LBank disconnected");
+        info!("LBankSubscriber stopped");
     }
 }
 

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::select;
 use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
 use xb_types::{
@@ -27,6 +28,8 @@ impl ArbFinder {
         mut updates: Receiver<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
+        info!("ArbFinder started");
+
         loop {
             select! {
                 next = updates.recv() => {
@@ -39,6 +42,8 @@ impl ArbFinder {
                 _ = cancellation_token.cancelled() => break,
             }
         }
+
+        info!("ArbFinder stopped");
     }
 
     fn find_and_notify_arbs(&self, latest_update: Exchange) {
@@ -98,7 +103,11 @@ impl ArbFinder {
 }
 
 impl OrderbookStateProcessor for ArbFinder {
-    fn run(self, updates: Receiver<Arc<OrderbookState>>, cancellation_token: CancellationToken) {
-        tokio::spawn(self.run_async(updates, cancellation_token));
+    fn run(
+        self,
+        updates: Receiver<Arc<OrderbookState>>,
+        cancellation_token: CancellationToken,
+    ) -> JoinHandle<()> {
+        tokio::spawn(self.run_async(updates, cancellation_token))
     }
 }

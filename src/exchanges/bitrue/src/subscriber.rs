@@ -118,6 +118,8 @@ impl ExchangeSubscriber for BitrueSubscriber {
         sender: Sender<Arc<OrderbookState>>,
         cancellation_token: CancellationToken,
     ) {
+        info!("BitrueSubscriber started");
+
         let (handle, future) = ezsockets::connect(
             |handle| WebSocketClient { handle, sender },
             ClientConfig::new(URL),
@@ -131,7 +133,7 @@ impl ExchangeSubscriber for BitrueSubscriber {
             }
         }
 
-        info!("Bitrue disconnected");
+        info!("BitrueSubscriber stopped");
     }
 }
 
