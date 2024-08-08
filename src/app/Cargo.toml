@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 dotenv.workspace = true
+rust_decimal.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
 tracing.workspace = true

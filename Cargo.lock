@@ -2289,6 +2289,7 @@ name = "xb-app"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "rust_decimal",
  "tokio",
  "tokio-util",
  "tracing",
