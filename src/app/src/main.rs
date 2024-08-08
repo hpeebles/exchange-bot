@@ -1,6 +1,6 @@
+use rust_decimal::Decimal;
 use std::io;
 use std::str::FromStr;
-use std::time::Duration;
 use tokio::sync::broadcast::channel;
 use tokio_util::sync::CancellationToken;
 use tracing::info;
@@ -46,8 +46,8 @@ async fn main() {
     if is_enabled("CASHOUT") {
         if let Some(amount) = get_config("CASHOUT_AMOUNT_PER_DAY") {
             let cashout = Cashout::new(
-                Duration::from_secs(get_config("CASHOUT_AVG_INTERVAL_SECS").unwrap_or(300)),
                 amount,
+                get_config("CASHOUT_AMOUNT_PER_ITERATION").unwrap_or(amount / Decimal::from(100)),
                 get_config("CASHOUT_MIN_PRICE"),
                 order_tx.clone(),
             );

@@ -1,3 +1,4 @@
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
@@ -15,7 +16,7 @@ const ONE_DAY: Duration = Duration::from_secs(24 * 60 * 60);
 
 pub struct Cashout {
     average_interval: Duration,
-    amount_to_sell_per_iteration: Decimal,
+    amount_per_iteration: Decimal,
     min_price: Option<Decimal>,
     order_sender: Sender<Arc<PendingOrder>>,
     asks_per_exchange: HashMap<Exchange, BTreeMap<Decimal, Decimal>>,
@@ -23,18 +24,22 @@ pub struct Cashout {
 
 impl Cashout {
     pub fn new(
-        average_interval: Duration,
         amount_per_day: Decimal,
+        amount_per_iteration: Decimal,
         min_price: Option<Decimal>,
         order_sender: Sender<Arc<PendingOrder>>,
     ) -> Cashout {
-        let amount_to_sell_per_iteration = amount_per_day
-            * Decimal::from(average_interval.as_millis())
-            / Decimal::from(ONE_DAY.as_millis());
+        let average_interval = Duration::from_millis(
+            (Decimal::from(ONE_DAY.as_millis()) * amount_per_iteration / amount_per_day)
+                .to_u64()
+                .unwrap(),
+        );
+
+        info!("Cashout started. AmountPerDay: {amount_per_day}. AmountPerIteration: {amount_per_iteration}. AverageInterval: {average_interval:?}. MinPrice: {min_price:?}");
 
         Cashout {
             average_interval,
-            amount_to_sell_per_iteration,
+            amount_per_iteration,
             min_price,
             order_sender,
             asks_per_exchange: HashMap::new(),
@@ -67,7 +72,7 @@ impl Cashout {
                         let order = PendingMarketOrder {
                             exchange,
                             direction: Direction::Sell,
-                            amount: self.amount_to_sell_per_iteration,
+                            amount: self.amount_per_iteration,
                             expected_return,
                         };
                         info!("Cashout: {order:?}");
@@ -88,7 +93,7 @@ impl Cashout {
 
     fn calculate_return(&self, asks: &BTreeMap<Decimal, Decimal>) -> Option<Decimal> {
         let mut total_return = Decimal::ZERO;
-        let mut total_remaining = self.amount_to_sell_per_iteration;
+        let mut total_remaining = self.amount_per_iteration;
 
         for (&price, &amount) in asks {
             if let Some(min_price) = self.min_price {
