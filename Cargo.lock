@@ -2317,6 +2317,7 @@ dependencies = [
 name = "xb-cashout"
 version = "0.1.0"
 dependencies = [
+ "rand",
  "rust_decimal",
  "tokio",
  "tokio-util",
